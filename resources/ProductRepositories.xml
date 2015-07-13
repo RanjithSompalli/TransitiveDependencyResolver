@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<products>
+	<product name="arcgis-for-server">
+		<repository>https://www.github.com/RanjithSompalli/arcgis-for-server</repository>
+	</product>
+	<product name="arcgis-portal-app">
+		<repository>https://www.github.com/RanjithSompalli/arcgis-portal-app</repository>
+	</product>
+</products>
