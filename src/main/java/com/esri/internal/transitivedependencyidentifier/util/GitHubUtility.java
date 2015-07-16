@@ -17,9 +17,10 @@ public class GitHubUtility
 	public static String cloneRepositoryBasedOnBranch(String repoURL, String buildNum)
 	{
 		Git result = null;
+		File tempCloneFolder = null;
 		try 
 		{
-    		File tempCloneFolder = new File(TransitiveDependencyProjectConstants.TEMPCLONEFOLDER);
+			tempCloneFolder = new File(TransitiveDependencyProjectConstants.TEMPCLONEFOLDER);
     		boolean isDirectoryCreated = tempCloneFolder.mkdir();
     		if (!isDirectoryCreated) 
     		{
@@ -34,7 +35,7 @@ public class GitHubUtility
 					.setNoCheckout(true)
 					.setProgressMonitor(new TextProgressMonitor())
 					.call();
-			result.checkout().setName("origin/"+buildNum).call();
+			result.checkout().setName("origin/builds/10.4.0."+buildNum).call();
 			System.out.println("Having repository: " + result.getRepository().getDirectory());
     	}
 		
@@ -46,7 +47,7 @@ public class GitHubUtility
 		{
 			result.close();
 		}
-		return TransitiveDependencyProjectConstants.TEMPCLONEFOLDER;
+		return tempCloneFolder.getName();
 	}
 
 	

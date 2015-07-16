@@ -1,12 +1,16 @@
 package com.esri.internal.transitivedependencyidentifier.application;
 
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 import com.esri.internal.transitivedependencyidentifier.beans.ProductRepository;
+import com.esri.internal.transitivedependencyidentifier.constants.TransitiveDependencyProjectConstants;
 import com.esri.internal.transitivedependencyidentifier.util.GitHubUtility;
+import com.esri.internal.transitivedependencyidentifier.util.MavenUtility;
 import com.esri.internal.transitivedependencyidentifier.util.XMLUtility;
 
 public class TransitiveDependencyIdentifier 
@@ -35,8 +39,13 @@ public class TransitiveDependencyIdentifier
 			for(String repositoryLink : repositoryLinks)
 			{
 				String clonedFolder = GitHubUtility.cloneRepositoryBasedOnBranch(repositoryLink,buildNum);
-				System.out.println("Repository cloned to:"+clonedFolder);
-				
+				MavenUtility.buildProjectSite(clonedFolder);
+				Map<String,List<String>> dependencies = MavenUtility.processPomFile(clonedFolder);
+				for(Map.Entry<String, List<String>> dependency : dependencies.entrySet())
+				{
+					System.out.println("Artifact Name:::"+dependency.getKey());
+					System.out.println("Site to be traversed:::"+dependency.getValue().get(0));
+				}
 			}
 		}
 		else
