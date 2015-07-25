@@ -1,11 +1,18 @@
 package com.esri.internal.transitivedependencyidentifier.util;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Properties;
+import java.util.Scanner;
 
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.TextProgressMonitor;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 
@@ -14,29 +21,39 @@ import com.esri.internal.transitivedependencyidentifier.constants.TransitiveDepe
 
 public class GitHubUtility 
 {
-	public static String cloneRepositoryBasedOnBranch(String repoURL, String buildNum)
+	public static String cloneRepositoryBasedOnBranch(String repoURL)
 	{
 		Git result = null;
 		File tempCloneFolder = null;
+		Scanner scanner = null;
 		try 
 		{
-			tempCloneFolder = new File(TransitiveDependencyProjectConstants.TEMPCLONEFOLDER);
-    		boolean isDirectoryCreated = tempCloneFolder.mkdir();
-    		if (!isDirectoryCreated) 
-    		{
-    			deleteDir(tempCloneFolder);
-    		} 
-    		
+			Path path = Files.createTempDirectory("tempCloneFolder");
+			System.out.println("Path of temp folder:::"+path.toString());
+			tempCloneFolder = new File(path.toString());
     		GitHubLoginCredentials loginCredentials = getLoginCredentials();
     		
+    		UsernamePasswordCredentialsProvider credentialsProvider = new UsernamePasswordCredentialsProvider(loginCredentials.getLogin(),loginCredentials.getPassword());
 			result = Git.cloneRepository().setDirectory(tempCloneFolder)
 					.setURI(repoURL)
-					.setCredentialsProvider(new UsernamePasswordCredentialsProvider(loginCredentials.getLogin(),loginCredentials.getPassword()))
+					.setCredentialsProvider(credentialsProvider)
 					.setNoCheckout(true)
 					.setProgressMonitor(new TextProgressMonitor())
 					.call();
-			result.checkout().setName("origin/builds/10.4.0."+buildNum).call();
-			System.out.println("Having repository: " + result.getRepository().getDirectory());
+			
+			 Collection<Ref> references = result.lsRemote().setCredentialsProvider(credentialsProvider).setHeads(true).call();
+			 System.out.println("Lists of builds available:::");
+			 for(Ref reference : references) 
+			 {
+				if(reference.getName().contains("refs/heads/builds"))
+				{
+					String refName = reference.getName();
+					String[] splittedBranch = refName.split("/");
+					System.out.println(splittedBranch[splittedBranch.length-1]);	
+				}
+			}	
+			String buildNum = "10.4.0.5225";
+			result.checkout().setName("origin/builds/"+buildNum).call();
     	}
 		
     	catch(Exception e)
@@ -47,7 +64,7 @@ public class GitHubUtility
 		{
 			result.close();
 		}
-		return tempCloneFolder.getName();
+		return tempCloneFolder.getAbsolutePath();
 	}
 
 	
@@ -89,5 +106,7 @@ public class GitHubUtility
 			}
         }
         return credentials;
-    }   	
+    }
+
+	
 }
