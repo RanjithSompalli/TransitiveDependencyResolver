@@ -1,15 +1,11 @@
 package com.esri.internal.transitivedependencyidentifier.util;
 
-import java.io.BufferedReader;
-import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +24,10 @@ import com.esri.internal.transitivedependencyidentifier.beans.DependencyBean;
 import com.esri.internal.transitivedependencyidentifier.constants.TransitiveDependencyProjectConstants;
 
 
+/**
+ * @author ranj8168
+ *
+ */
 public class MavenUtility 
 {
 
@@ -103,68 +103,41 @@ public class MavenUtility
 	public static List<DependencyBean> generateDependencyList(String artifactId,String clonedFolder) 
 	{
 		List<DependencyBean> dependencyList = null;
-		InvocationRequest request = new DefaultInvocationRequest();
-    	request.setPomFile( new File(clonedFolder));
-    	String outputFileName = "C:\\WorkingDirectory\\DependencyLists\\DependencyList_"+artifactId+".txt";
-    	request.setGoals( Arrays.asList( "dependency:list -DoutputFile="+outputFileName));
+		try 
+		{
+			InvocationRequest request = new DefaultInvocationRequest();
+			request.setPomFile( new File(clonedFolder));
+			
+			File dependencyListFile = File.createTempFile("DependencyList_"+artifactId,".txt");
+			String outputFileName = dependencyListFile.getAbsolutePath();
+			request.setGoals( Arrays.asList( "dependency:list -DoutputFile="+outputFileName));
 
-    	Invoker invoker = new DefaultInvoker();
-    	invoker.setMavenHome(new File(TransitiveDependencyProjectConstants.MAVENHOME));
-    	try 
-    	{
+			Invoker invoker = new DefaultInvoker();
+			invoker.setMavenHome(new File(TransitiveDependencyProjectConstants.MAVENHOME));
+
 			InvocationResult result =invoker.execute( request );
 			if(result.getExitCode()!=0)
 				return dependencyList;
-			dependencyList = parseDependenciesFile(outputFileName);
-		} 
+			dependencyList = FileUtility.parseDependenciesFile(outputFileName);
+		}
+		
     	catch (MavenInvocationException e) 
     	{
 			e.printStackTrace();
 		}
+		catch (IOException e1) 
+		{
+			e1.printStackTrace();
+		}
     	return dependencyList;
 	}
 	
-	public static List<DependencyBean> parseDependenciesFile(String dependencyFilePath)
-	{
-		List<DependencyBean> dependencies = new ArrayList<DependencyBean>();
-		try
-		{
-	        FileInputStream fstream = new  FileInputStream(dependencyFilePath);
-	        DataInputStream in = new DataInputStream(fstream);
-	        BufferedReader br = new BufferedReader(new InputStreamReader(in));
-	        String strLine;
-	        //Read File Line By Line
-	        while ((strLine = br.readLine()) != null)   
-	        {
-	            if(strLine.length()>0)
-	            {
-	            	String[] splittedLine = strLine.split(":");
-	            	if(splittedLine.length>1)
-	            	{
-	            		String dependencyScope = splittedLine[4];
-	            		if(!dependencyScope.equalsIgnoreCase("test"))
-	            		{
-	            			DependencyBean bean = new DependencyBean();
-	            			bean.setGroupId(splittedLine[0]);
-	            			bean.setArtifactId(splittedLine[1]);
-	            			bean.setVersion(splittedLine[3]);
-	            			bean.setTransitiveDependency(true);
-	            			bean.setDuplicate(false);
-	            			dependencies.add(bean);
-	            		}
-	            	}	
-	            }  
-	        }
-	        //Close the input stream
-	        in.close();
-	    }
-		catch (Exception e)
-		{//Catch exception if any
-	        e.printStackTrace();
-	    }
-		return dependencies;
-	}
-	
+	/**
+	 * This method will compare the dependencies retrieved from the pom using mvn:list command and the direct dependencies retrieved from maven model API and
+	 * determines the transitive and direct dependencies
+	 * @param directDependencies -- direct dependencies retrieved using maven model API
+	 * @param dependencies -- all the list of dependencies retrieved using mvn -dependency:list command
+	 */
 	public static void deriveTransitiveDependencies(List<Dependency> directDependencies, List<DependencyBean> dependencies)
 	{
 		for(DependencyBean dependency : dependencies)
@@ -175,5 +148,35 @@ public class MavenUtility
 					dependency.setTransitiveDependency(false);
 			}
 		}	
+	}
+	
+	/**
+	 * This method will identify the duplicate artifact ids among all the modules of a given repository.
+	 * It loops through each and every dependency of each and every sub module and a dependency is identified as duplicate if there exists different versions of same artifact in 
+	 * different modules.
+	 * 
+	 * @param artifactDependenciesMap -- Map containing the modules artifact Id as the key and its corresponding dependencies as the value
+	 */
+	public static void identifyDuplicateDependencies(Map<String,List<DependencyBean>> artifactDependenciesMap)
+	{
+		Map<String,String> uniqueArtifactIds = new HashMap<String,String>();
+		for(Map.Entry<String,List<DependencyBean>> artifactDependencies : artifactDependenciesMap.entrySet())
+		{
+			List<DependencyBean> dependencies = artifactDependencies.getValue();
+			for(DependencyBean dependency : dependencies)
+			{
+				String artifactId = dependency.getArtifactId();
+				String version = dependency.getVersion();
+				if(uniqueArtifactIds.size()==0)
+					uniqueArtifactIds.put(artifactId, version);
+				if(uniqueArtifactIds.get(artifactId)!=null)
+				{
+					if(!uniqueArtifactIds.get(artifactId).equalsIgnoreCase(version))
+						dependency.setDuplicate(true);
+				}
+				else
+					uniqueArtifactIds.put(artifactId, version);		
+			}
+		}		
 	}
 }

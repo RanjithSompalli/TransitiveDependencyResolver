@@ -1,5 +1,11 @@
 package com.esri.internal.transitivedependencyidentifier.beans;
 
+/***
+ * @author ranj8168
+ *This is a java bean class that represents a pom file's Dependency
+ *
+ *
+ */
 public class DependencyBean 
 {
 	String groupId;
