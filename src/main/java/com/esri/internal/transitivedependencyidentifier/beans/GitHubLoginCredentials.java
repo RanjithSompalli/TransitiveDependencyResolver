@@ -1,5 +1,11 @@
 package com.esri.internal.transitivedependencyidentifier.beans;
 
+/**
+ *@author ranj8168
+ *
+ *This is a java bean class that holds the user name and password for authenticating the github
+ *
+ */
 public class GitHubLoginCredentials 
 {
 	private String login;

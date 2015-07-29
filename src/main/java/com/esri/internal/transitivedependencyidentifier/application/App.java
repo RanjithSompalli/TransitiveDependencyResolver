@@ -37,6 +37,7 @@ import org.eclipse.jgit.treewalk.filter.PathFilter;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -47,12 +48,6 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
 
-import org.jdom.JDOMException;
-import org.jdom.input.SAXBuilder;
-import org.jdom.output.XMLOutputter;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.select.Elements;
 
 //import com.esri.internal.transitivedependencyidentifier.util.;
 
@@ -75,10 +70,10 @@ import java.io.IOException;
  */
 public class App 
 {
-    public static void main( String[] args ) throws IOException, InvalidRemoteException, TransportException, GitAPIException, XmlPullParserException, MavenInvocationException, JDOMException
+    public static void main( String[] args ) throws IOException, InvalidRemoteException, TransportException, GitAPIException, XmlPullParserException, MavenInvocationException
     {
     	
-    	BufferedInputStream in = null;
+    	/*BufferedInputStream in = null;
         FileOutputStream fout = null;
         try {
             in = new BufferedInputStream(new URL("https://raw.githubusercontent.com/RanjithSompalli/TransitiveDependencyResolver/branch-1/pom.xml").openStream());
@@ -98,8 +93,49 @@ public class App
             if (fout != null) {
                 fout.close();
             }
-        }
+        }*/
     	
+    	File gitWorkDir = new File("C:\\Users\\ranj8168\\AppData\\Local\\Temp\\1\\tempCloneFolder185923185622015762");
+        Git git = Git.open(gitWorkDir);
+       
+        Repository repo = git.getRepository();
+     
+        ObjectId lastCommitId = repo.resolve(Constants.HEAD);
+     
+        RevWalk revWalk = new RevWalk(repo);
+        RevCommit commit = revWalk.parseCommit(lastCommitId);
+     
+        RevTree tree = commit.getTree();
+     
+        TreeWalk treeWalk = new TreeWalk(repo);
+        treeWalk.addTree(tree);
+        treeWalk.setRecursive(true);
+        treeWalk.setFilter(PathFilter.create("file1.txt"));
+        if (!treeWalk.next()) 
+        {
+          System.out.println("Nothing found!");
+          return;
+        }
+     
+        ObjectId objectId = treeWalk.getObjectId(0);
+        ObjectLoader loader = repo.open(objectId);
+     
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        loader.copyTo(out);
+        System.out.println("file1.txt:\n" + out.toString());
+        
+
+		/* Collection<Ref> references = result.lsRemote().setCredentialsProvider(credentialsProvider).setHeads(true).call();
+		 System.out.println("Lists of builds available:::");
+		 for(Ref reference : references) 
+		 {
+			if(reference.getName().contains("refs/heads/builds"))
+			{
+				String refName = reference.getName();
+				String[] splittedBranch = refName.split("/");
+				System.out.println(splittedBranch[splittedBranch.length-1]);	
+			}
+		}	*/
     	 // prepare a new folder
     	/*Repository repository = createNewRepository();
     	 Collection<Ref>  refs = new Git(repository).lsRemote().setHeads(true).call();
@@ -237,11 +273,7 @@ public class App
     	    	 
     	     }
     	}
-    	}*/
-    	
-    	Document html = Jsoup.parse("C:\\WorkingDirectory\\Java-Workspace\\arcgis-for-server-master\\framework\\persistence\\target\\site\\dependencies.html","ISO-8859-1" );
-    	Elements sections = html.getElementsByClass("section");
-    	
+    	}*/  	
     	
     }  
     

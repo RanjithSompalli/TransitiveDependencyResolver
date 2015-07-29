@@ -1,35 +1,41 @@
 package com.esri.internal.transitivedependencyidentifier.util;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collection;
 import java.util.Properties;
-import java.util.Scanner;
 
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.TextProgressMonitor;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 
 import com.esri.internal.transitivedependencyidentifier.beans.GitHubLoginCredentials;
 import com.esri.internal.transitivedependencyidentifier.constants.TransitiveDependencyProjectConstants;
 
+/**
+ * @author ranj8168
+ * This class performs all git specific operations : like authenticating the remote repository, cloning the remote repository,
+ * Switching between the builds etc.,
+ *
+ */
 public class GitHubUtility 
 {
-	public static String cloneRepositoryBasedOnBranch(String repoURL)
+	/***
+	 * This method will clones the repository from repoURL and checks out the specific branch
+	 * @param repoURL -- URL of the remote repository
+	 * @param buildNum -- he build number for which the dependencies are to be resolved
+	 * @return
+	 */
+	public static String cloneRepositoryBasedOnBranch(String repoURL,String buildNum)
 	{
 		Git result = null;
 		File tempCloneFolder = null;
-		Scanner scanner = null;
 		try 
 		{
 			Path path = Files.createTempDirectory("tempCloneFolder");
-			System.out.println("Path of temp folder:::"+path.toString());
+			
 			tempCloneFolder = new File(path.toString());
     		GitHubLoginCredentials loginCredentials = getLoginCredentials();
     		
@@ -40,20 +46,7 @@ public class GitHubUtility
 					.setNoCheckout(true)
 					.setProgressMonitor(new TextProgressMonitor())
 					.call();
-			
-			 Collection<Ref> references = result.lsRemote().setCredentialsProvider(credentialsProvider).setHeads(true).call();
-			 System.out.println("Lists of builds available:::");
-			 for(Ref reference : references) 
-			 {
-				if(reference.getName().contains("refs/heads/builds"))
-				{
-					String refName = reference.getName();
-					String[] splittedBranch = refName.split("/");
-					System.out.println(splittedBranch[splittedBranch.length-1]);	
-				}
-			}	
-			String buildNum = "10.4.0.5225";
-			result.checkout().setName("origin/builds/"+buildNum).call();
+			result.checkout().setName("origin/builds/10.4.0."+buildNum).call();
     	}
 		
     	catch(Exception e)
@@ -66,21 +59,37 @@ public class GitHubUtility
 		}
 		return tempCloneFolder.getAbsolutePath();
 	}
+	
+	/**
+	 * This method checks if remote repository exists and then switched to corresponding branch provided as build number
+	 * @param localRepositoryPath -- local git repository path
+	 * @param buildNum -- the build number for which the dependencies are to be resolved
+	 */
+	public static void checkOutToBuildNumber(String localRepositoryPath,String buildNum) 
+	{
+		try 
+		{
+			File gitWorkDir = new File(localRepositoryPath);
+			if(gitWorkDir.exists())
+			{
+				Git git = Git.open(gitWorkDir);
+				git.checkout().setName("origin/builds/10.4.0."+buildNum).call();
+			}
+			else
+				throw new Exception("No Git repository exists in Given Path");
+		} 
+		catch (Exception e) 
+		{
+			e.printStackTrace();
+		}   
+	}
 
 	
-	public static void deleteDir(File dir) 
-	{
-	    File[] files = dir.listFiles();
-	    for (File myFile: files) 
-	    {
-	    	if (myFile.isDirectory()) 
-	    	{  
-	    		deleteDir(myFile);
-	    	} 
-	    	myFile.delete();
-	    }
-	}
-	
+	/**
+	 * Retrieves the git hub login credentials from the properties file.
+	 * 
+	 * @return GitHubLoginCredentials -- Object that holds the login and password of github
+	 */
 	public static GitHubLoginCredentials getLoginCredentials()
 	{
 		GitHubLoginCredentials credentials = new GitHubLoginCredentials();
@@ -98,15 +107,8 @@ public class GitHubUtility
 			e.printStackTrace();
 		} 
         finally 
-        {
-            try {
-				in.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+        {try {in.close();} catch (IOException e) {e.printStackTrace();}
         }
         return credentials;
-    }
-
-	
+    }	
 }
