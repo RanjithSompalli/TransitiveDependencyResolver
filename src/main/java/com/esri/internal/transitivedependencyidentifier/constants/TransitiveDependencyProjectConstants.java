@@ -8,9 +8,10 @@ package com.esri.internal.transitivedependencyidentifier.constants;
  */
 public class TransitiveDependencyProjectConstants 
 {
-	public static final String PRODUCTREPOSITORYFILEPATH 	= "C:\\WorkingDirectory\\Java-Workspace\\TransitiveDependencyResolver\\resources\\productRepositories.properties";
-	public static final String CREDENTIALSFILE 				= "C:\\WorkingDirectory\\Java-Workspace\\TransitiveDependencyResolver\\resources\\.credentials";
-	public static final String LOGIN 						= "login";
-	public static final String PASSWORD 					= "password";	
-	public static final String MAVENHOME 					= "C:\\Users\\ranj8168\\Downloads\\apache-maven-3.3.3";
+	//property names to be given in the project configurations file passed as the argument.
+	public static final String REMOTEREPOSITORYPATHPROPERTY         = "remoteRepositoryPath";
+	public static final String LOCALREPOSITORYPATHPROPERTY			= "localRepositoryPath"; 
+	public static final String MAVENHOMEPROPERTY					= "MAVEN_HOME";
+	public static final String GITHUBLOGINPROPERTY					= "login";
+	public static final String GITHUBPASSWORDPROPERTY				= "password";
 }
