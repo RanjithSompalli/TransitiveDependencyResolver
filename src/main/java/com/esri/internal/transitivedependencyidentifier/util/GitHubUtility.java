@@ -1,16 +1,15 @@
 package com.esri.internal.transitivedependencyidentifier.util;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Properties;
 
+import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.TextProgressMonitor;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 
+import com.esri.internal.transitivedependencyidentifier.application.TransitiveDependencyIdentifier;
 import com.esri.internal.transitivedependencyidentifier.beans.GitHubLoginCredentials;
 import com.esri.internal.transitivedependencyidentifier.constants.TransitiveDependencyProjectConstants;
 
@@ -28,9 +27,9 @@ public class GitHubUtility
 	 * @param buildNum -- he build number for which the dependencies are to be resolved
 	 * @return
 	 */
-	public static String cloneRepositoryBasedOnBranch(String repoURL,String buildNum)
+	public static String cloneRepositoryBasedOnBranch(String repoURL)
 	{
-		Git result = null;
+		//Git result = null;
 		File tempCloneFolder = null;
 		try 
 		{
@@ -40,23 +39,26 @@ public class GitHubUtility
     		GitHubLoginCredentials loginCredentials = getLoginCredentials();
     		
     		UsernamePasswordCredentialsProvider credentialsProvider = new UsernamePasswordCredentialsProvider(loginCredentials.getLogin(),loginCredentials.getPassword());
-			result = Git.cloneRepository().setDirectory(tempCloneFolder)
+			/*result = Git.cloneRepository().setDirectory(tempCloneFolder)
 					.setURI(repoURL)
 					.setCredentialsProvider(credentialsProvider)
 					.setNoCheckout(true)
 					.setProgressMonitor(new TextProgressMonitor())
 					.call();
-			result.checkout().setName("origin/builds/10.4.0."+buildNum).call();
+			result.checkout().setName("origin/builds/10.4.0.5225").call();*/
+			CloneCommand cloneCommand = Git.cloneRepository();
+            cloneCommand.setDirectory(tempCloneFolder);
+            cloneCommand.setNoCheckout(false);
+            cloneCommand.setURI( repoURL);
+            cloneCommand.setCredentialsProvider( credentialsProvider );
+            cloneCommand.setProgressMonitor(new TextProgressMonitor());
+            cloneCommand.call();
     	}
 		
     	catch(Exception e)
     	{
     		e.printStackTrace();
     	}
-		finally
-		{
-			result.close();
-		}
 		return tempCloneFolder.getAbsolutePath();
 	}
 	
@@ -93,22 +95,19 @@ public class GitHubUtility
 	public static GitHubLoginCredentials getLoginCredentials()
 	{
 		GitHubLoginCredentials credentials = new GitHubLoginCredentials();
-		Properties props = new Properties();
-        FileInputStream in = null;
-        try 
+		String login = TransitiveDependencyIdentifier.configProperties.getProperty(TransitiveDependencyProjectConstants.GITHUBLOGINPROPERTY);
+		String password = TransitiveDependencyIdentifier.configProperties.getProperty(TransitiveDependencyProjectConstants.GITHUBPASSWORDPROPERTY);
+        if(login!=null && password!=null)
         {
-            in = new FileInputStream(TransitiveDependencyProjectConstants.CREDENTIALSFILE);
-            props.load(in);
-            credentials.setLogin(props.getProperty(TransitiveDependencyProjectConstants.LOGIN));
-            credentials.setPassword(props.getProperty(TransitiveDependencyProjectConstants.PASSWORD));
-        } 
-        catch (IOException e)
-        {
-			e.printStackTrace();
-		} 
-        finally 
-        {try {in.close();} catch (IOException e) {e.printStackTrace();}
+        	credentials.setLogin(login);
+        	credentials.setPassword(password);
         }
+        else
+        {
+        	System.err.println("Unable to retrieve credentials from config file");
+        	System.exit(0);
+        }
+        
         return credentials;
     }	
 }

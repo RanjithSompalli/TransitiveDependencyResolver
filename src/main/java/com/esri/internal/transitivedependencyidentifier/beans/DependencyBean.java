@@ -1,5 +1,8 @@
 package com.esri.internal.transitivedependencyidentifier.beans;
 
+import java.util.List;
+import java.util.Map;
+
 /***
  * @author ranj8168
  *This is a java bean class that represents a pom file's Dependency
@@ -8,12 +11,11 @@ package com.esri.internal.transitivedependencyidentifier.beans;
  */
 public class DependencyBean 
 {
-	String groupId;
-	String artifactId;
-	String version;
-	String licencse;
-	boolean isTransitiveDependency;
-	boolean isDuplicate;
+	private String groupId;
+	private String artifactId;
+	private Map<String,List<String>> versionToArtifactMappings;
+	private boolean isTransitiveDependency;
+	private boolean isDuplicate;
 	
 	public String getGroupId() {
 		return groupId;
@@ -27,17 +29,12 @@ public class DependencyBean
 	public void setArtifactId(String artifactId) {
 		this.artifactId = artifactId;
 	}
-	public String getVersion() {
-		return version;
+	public Map<String, List<String>> getVersionToArtifactMappings() {
+		return versionToArtifactMappings;
 	}
-	public void setVersion(String version) {
-		this.version = version;
-	}
-	public String getLicencse() {
-		return licencse;
-	}
-	public void setLicencse(String licencse) {
-		this.licencse = licencse;
+	public void setVersionToArtifactMappings(
+			Map<String, List<String>> versionToArtifactMappings) {
+		this.versionToArtifactMappings = versionToArtifactMappings;
 	}
 	public boolean isTransitiveDependency() {
 		return isTransitiveDependency;
@@ -51,7 +48,4 @@ public class DependencyBean
 	public void setDuplicate(boolean isDuplicate) {
 		this.isDuplicate = isDuplicate;
 	}
-	
-	
-
 }
